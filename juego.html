@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>TRIPLE RUN</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            min-height: 100svh;
+            display: grid;
+            place-items: center;
+            padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+            background:
+                radial-gradient(ellipse at 50% 0%, #25364a 0%, transparent 58%),
+                linear-gradient(145deg, #090e17, #111827 55%, #080b11);
+            color: #f4f7ff;
+            font-family: "Segoe UI", Arial, sans-serif;
+            overscroll-behavior: none;
+        }
+
+        .contenedor {
+            width: min(1160px, 100%);
+            min-width: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 10px;
+        }
+
+        h2 {
+            margin: 0;
+            letter-spacing: 5px;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        h2 span {
+            color: #f7bd78;
+        }
+
+        .etiqueta {
+            color: #a7b3c5;
+            font: 700 10px "Segoe UI", Arial, sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .juego {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 16 / 7;
+            border: 1px solid #657082;
+            border-radius: 14px;
+            background: #141b29;
+            box-shadow:
+                0 28px 80px #0009,
+                0 0 0 5px #ffffff08,
+                inset 0 1px #ffffff22;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: manipulation;
+        }
+
+        .estadisticas {
+            position: absolute;
+            top: 20px;
+            left: 22px;
+            right: 22px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font: 700 10px "Segoe UI", Arial, sans-serif;
+            letter-spacing: 1.4px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .estadisticas div {
+            padding: 9px 12px;
+            border: 1px solid #ffffff24;
+            border-radius: 7px;
+            background: #0c1422aa;
+            box-shadow: 0 5px 16px #0002;
+        }
+
+        .estadisticas strong {
+            margin-left: 5px;
+            color: #ffd091;
+        }
+
+        .pantalla {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background:
+                radial-gradient(ellipse at center, #101827c9, #09101bd9 72%),
+                linear-gradient(0deg, #09101bd9, #09101b99);
+            backdrop-filter: blur(2px);
+        }
+
+        .pantalla.oculta {
+            display: none;
+        }
+
+        .pantalla h1 {
+            font-size: clamp(25px, 5vw, 48px);
+            margin: 10px 0;
+            letter-spacing: 2px;
+            line-height: 1.08;
+            text-shadow: 0 4px 30px #0009;
+        }
+
+        .pantalla p {
+            max-width: 500px;
+            line-height: 1.6;
+            color: #d0d5df;
+            font: 15px/1.65 "Segoe UI", Arial, sans-serif;
+        }
+
+        button {
+            min-height: 44px;
+            border: 1px solid #ffe2b2;
+            border-radius: 7px;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #ffdb9d, #e99b54);
+            color: #28170e;
+            font: 800 12px "Segoe UI", Arial, sans-serif;
+            letter-spacing: 1.5px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 26px #e99b5440, inset 0 1px #fff8;
+            transition: transform 160ms ease, filter 160ms ease;
+        }
+
+        button:hover {
+            filter: brightness(1.08);
+            transform: translateY(-2px);
+        }
+
+        button:focus-visible {
+            outline: 3px solid #fff;
+            outline-offset: 3px;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .controles {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 4px 0;
+            color: #a7b3c5;
+            font: 11px "Segoe UI", Arial, sans-serif;
+        }
+
+        .salto-tactil {
+            display: none;
+        }
+
+        .controles strong {
+            color: #f2c58f;
+            letter-spacing: .5px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+            }
+
+            .juego {
+                aspect-ratio: 16 / 9;
+                border-radius: 10px;
+            }
+
+            h2 {
+                font-size: 17px;
+                letter-spacing: 3px;
+            }
+
+            .etiqueta {
+                font-size: 9px;
+                letter-spacing: 1px;
+            }
+
+            .estadisticas {
+                top: 8px;
+                left: 6px;
+                right: 6px;
+                gap: 3px;
+                font-size: clamp(6px, 2vw, 8px);
+                letter-spacing: .2px;
+            }
+
+            .estadisticas div {
+                min-width: 0;
+                padding: 5px 4px;
+                overflow: hidden;
+                text-overflow: clip;
+            }
+
+            .estadisticas strong {
+                margin-left: 2px;
+            }
+
+            .controles {
+                gap: 7px 10px;
+                padding-top: 10px;
+                font-size: 10px;
+            }
+
+            .pantalla {
+                padding: 10px;
+            }
+
+            .pantalla h1 {
+                margin: 5px 0;
+                font-size: clamp(20px, 6vw, 30px);
+            }
+
+            .pantalla p {
+                margin: 7px 0 12px;
+                font-size: 12px;
+                line-height: 1.4;
+            }
+
+            .pantalla button {
+                padding: 11px 18px;
+                font-size: 11px;
+            }
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .salto-tactil {
+                display: block;
+                width: 100%;
+                min-height: 48px;
+                margin-top: 3px;
+                touch-action: manipulation;
+            }
+        }
+
+        @media (max-width: 360px) {
+            header {
+                margin-bottom: 9px;
+            }
+
+            .etiqueta {
+                font-size: 8px;
+            }
+
+            .controles span:first-child,
+            .controles span:last-of-type {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <header>
+            <h2>TRIPLE<span>RUN</span></h2>
+            <div class="etiqueta">ENDLESS RUNNER / 001</div>
+        </header>
+
+        <section class="juego">
+
+            <canvas id="canvas" width="1280" height="560"></canvas>
+
+            <div class="estadisticas">
+                <div>DISTANCIA <strong id="puntos">000000</strong></div>
+                <div>RÉCORD <strong id="record">000000</strong></div>
+                <div>VELOCIDAD <strong id="velocidad">1.0x</strong></div>
+            </div>
+
+            <div class="pantalla" id="pantalla">
+
+                <div style="color:#f7bd78;letter-spacing:4px">
+                    PROTOCOLO INICIADO
+                </div>
+
+                <h1 id="titulo">
+                    TRES PIERNAS.<br>
+                    NINGÚN FRENO.
+                </h1>
+
+                <p id="mensaje">
+                    Salta sobre las manos que bloquean el camino.
+                    Cuanto más sobrevivas, más rápido irá todo.
+                    El recorrido es infinito.
+                </p>
+
+                <button id="iniciar" type="button">
+                    INICIAR PARTIDA
+                </button>
+
+            </div>
+        </section>
+
+        <footer class="controles">
+            <span><strong>ESPACIO / ↑ / W</strong> — Saltar</span>
+            <span><strong>TOCAR PANTALLA</strong> — Saltar</span>
+            <span><strong>R</strong> — Reiniciar</span>
+            <button class="salto-tactil" id="saltar" type="button" aria-label="Saltar">SALTAR</button>
+        </footer>
+
+    </main>
+
+    <script>
+        "use strict";
+
+        // ======================================
+        // CONFIGURACIÓN DEL JUEGO
+        // ======================================
+
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const W = canvas.width;
+        const H = canvas.height;
+        const SUELO = 438;
+
+        const puntosHTML = document.getElementById("puntos");
+        const recordHTML = document.getElementById("record");
+        const velocidadHTML = document.getElementById("velocidad");
+
+        const pantalla = document.getElementById("pantalla");
+        const titulo = document.getElementById("titulo");
+        const mensaje = document.getElementById("mensaje");
+        const boton = document.getElementById("iniciar");
+        const botonSalto = document.getElementById("saltar");
+
+        let estado = "inicio";
+        let distancia = 0;
+        let record = 0;
+        let velocidad = 390;
+        let tiempoAnterior = 0;
+        let mundo = 0;
+        let temporizador = 1;
+
+        const gravedad = 2050;
+        const fuerzaSalto = 790;
+
+        let obstaculos = [];
+        let particulas = [];
+
+        let jugador = {
+            x: 155,
+            y: SUELO,
+            vy: 0,
+            suelo: true,
+            animacion: 0
+        };
+
+        // Recuperar el récord guardado.
+        try {
+            record = Number(
+                localStorage.getItem("tripleRunRecord") || 0
+            );
+        } catch (error) {
+            record = 0;
+        }
+
+        function formato(numero) {
+            return Math.floor(numero)
+                .toString()
+                .padStart(6, "0");
+        }
+
+        recordHTML.textContent = formato(record);
+
+        // ======================================
+        // INICIAR Y REINICIAR
+        // ======================================
+
+        function iniciarJuego() {
+
+            estado = "jugando";
+
+            distancia = 0;
+            velocidad = 390;
+            mundo = 0;
+            temporizador = 1;
+
+            obstaculos = [];
+            particulas = [];
+
+            jugador = {
+                x: 155,
+                y: SUELO,
+                vy: 0,
+                suelo: true,
+                animacion: 0
+            };
+
+            pantalla.classList.add("oculta");
+
+            puntosHTML.textContent = formato(0);
+            velocidadHTML.textContent = "1.0x";
+        }
+
+        function perder() {
+
+            if (estado !== "jugando") return;
+
+            estado = "perdido";
+
+            if (distancia > record) {
+
+                record = Math.floor(distancia);
+
+                try {
+                    localStorage.setItem(
+                        "tripleRunRecord",
+                        record
+                    );
+                } catch (error) {
+                    // El juego sigue funcionando aunque
+                    // el navegador no permita guardar.
+                }
+
+                recordHTML.textContent = formato(record);
+            }
+
+            titulo.innerHTML = "GAME OVER.<br>TE ALCANZARON LAS MANOS.";
+
+            mensaje.textContent =
+                "Recorriste " + formato(distancia) +
+                " unidades. Tu récord está guardado. " +
+                "¿Puedes superarlo?";
+
+            boton.textContent = "VOLVER A INTENTAR";
+
+            pantalla.classList.remove("oculta");
+        }
+
+        // ======================================
+        // SALTO
+        // ======================================
+
+        function saltar() {
+
+            if (estado !== "jugando") return;
+
+            if (!jugador.suelo) return;
+
+            jugador.vy = -fuerzaSalto;
+            jugador.suelo = false;
+
+            // Partículas al despegar.
+            for (let i = 0; i < 8; i++) {
+
+                particulas.push({
+                    x: jugador.x + 25,
+                    y: SUELO - 3,
+                    vx: -60 - Math.random() * 130,
+                    vy: -Math.random() * 150,
+                    vida: 0.4
+                });
+            }
+        }
+
+        boton.addEventListener("click", iniciarJuego);
+        botonSalto.addEventListener("click", function () {
+            if (estado === "inicio" || estado === "perdido") {
+                iniciarJuego();
+            } else {
+                saltar();
+            }
+        });
+
+        window.addEventListener("keydown", function (e) {
+
+            if (
+                e.code === "Space" ||
+                e.code === "ArrowUp" ||
+                e.code === "KeyW"
+            ) {
+                e.preventDefault();
+
+                if (estado === "inicio" || estado === "perdido") {
+                    iniciarJuego();
+                } else if (!e.repeat) {
+                    saltar();
+                }
+            }
+
+            if (e.code === "KeyR" && estado === "perdido") {
+                iniciarJuego();
+            }
+        });
+
+        canvas.addEventListener("pointerdown", function () {
+
+            if (estado === "inicio" || estado === "perdido") {
+                iniciarJuego();
+            } else {
+                saltar();
+            }
+        });
+
+        // ======================================
+        // FUNCIONES DE DIBUJO
+        // ======================================
+
+        function rectanguloRedondeado(x, y, w, h, r, color) {
+
+            ctx.beginPath();
+
+            ctx.roundRect(x, y, w, h, r);
+
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function dibujarFondo() {
+            const cielo = ctx.createLinearGradient(0, 0, 0, SUELO + 45);
+            cielo.addColorStop(0, "#26364f");
+            cielo.addColorStop(0.45, "#9d6570");
+            cielo.addColorStop(0.78, "#e29a68");
+            cielo.addColorStop(1, "#f0bf7a");
+            ctx.fillStyle = cielo;
+            ctx.fillRect(0, 0, W, SUELO + 2);
+
+            const resplandor = ctx.createRadialGradient(
+                885, 190, 12, 885, 190, 380
+            );
+            resplandor.addColorStop(0, "#ffe9b788");
+            resplandor.addColorStop(0.25, "#ffd39c55");
+            resplandor.addColorStop(1, "#ffd39c00");
+            ctx.fillStyle = resplandor;
+            ctx.fillRect(470, 0, 810, SUELO);
+
+            ctx.fillStyle = "#ffe3ae";
+            ctx.beginPath();
+            ctx.arc(890, 190, 43, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#fff0ce32";
+            ctx.beginPath();
+            ctx.arc(890, 190, 66, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Nubes largas y veladas contra la luz del atardecer.
+            for (let i = 0; i < 5; i++) {
+                const x = ((i * 297 - mundo * 0.025) % (W + 400) + W + 400) % (W + 400) - 180;
+                const y = 90 + (i * 43 % 130);
+                ctx.fillStyle = i % 2 ? "#f5c69b20" : "#f8d8ba25";
+                ctx.beginPath();
+                ctx.ellipse(x, y, 105 + i % 3 * 28, 8 + i % 2 * 4, -0.04, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(x + 30, y - 5, 54, 7, -0.04, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Siluetas de montañas lejanas.
+            ctx.fillStyle = "#66556a";
+            ctx.beginPath();
+            ctx.moveTo(0, 336);
+            ctx.lineTo(120, 241);
+            ctx.lineTo(201, 309);
+            ctx.lineTo(321, 211);
+            ctx.lineTo(435, 314);
+            ctx.lineTo(565, 238);
+            ctx.lineTo(711, 327);
+            ctx.lineTo(852, 225);
+            ctx.lineTo(988, 312);
+            ctx.lineTo(1116, 236);
+            ctx.lineTo(1280, 323);
+            ctx.lineTo(1280, SUELO);
+            ctx.lineTo(0, SUELO);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = "#594d5f";
+            ctx.beginPath();
+            ctx.moveTo(0, 360);
+            ctx.lineTo(167, 295);
+            ctx.lineTo(282, 346);
+            ctx.lineTo(437, 284);
+            ctx.lineTo(587, 352);
+            ctx.lineTo(738, 289);
+            ctx.lineTo(918, 356);
+            ctx.lineTo(1083, 292);
+            ctx.lineTo(1280, 354);
+            ctx.lineTo(1280, SUELO);
+            ctx.lineTo(0, SUELO);
+            ctx.closePath();
+            ctx.fill();
+
+            // Ruinas de templos y columnas con desplazamiento parallax.
+            const desplazamiento = mundo * 0.12;
+            for (let i = 0; i < 8; i++) {
+                const ancho = 102 + i % 3 * 24;
+                const x = ((i * 193 - desplazamiento) % (W + 260) + W + 260) % (W + 260) - 130;
+                const base = 390 + i % 2 * 9;
+                const alto = 100 + (i * 37 % 98);
+                const piedra = ctx.createLinearGradient(x, 0, x + ancho, 0);
+                piedra.addColorStop(0, "#413c4a");
+                piedra.addColorStop(0.24, "#74606a");
+                piedra.addColorStop(0.7, "#66535d");
+                piedra.addColorStop(1, "#403b49");
+                ctx.fillStyle = piedra;
+                const cima = base - alto;
+                ctx.beginPath();
+                ctx.moveTo(x, base);
+                ctx.lineTo(x, cima);
+                if (i % 3 === 0) {
+                    ctx.lineTo(x + ancho * 0.34, cima);
+                    ctx.lineTo(x + ancho * 0.43, cima + 13);
+                    ctx.lineTo(x + ancho * 0.62, cima + 7);
+                    ctx.lineTo(x + ancho * 0.73, cima);
+                }
+                ctx.lineTo(x + ancho, cima);
+                ctx.lineTo(x + ancho, base);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = "#8c7070";
+                ctx.fillRect(x - 9, base - alto, ancho + 18, 9);
+                ctx.fillRect(x - 5, base - alto + 11, ancho + 10, 5);
+                ctx.fillStyle = "#342f3b";
+                ctx.fillRect(x + 17, base - alto + 24, 11, 33);
+                ctx.fillRect(x + 51, base - alto + 24, 11, 33);
+                ctx.fillRect(x + 85, base - alto + 24, 11, 33);
+
+                ctx.fillStyle = "#4a414b";
+                for (let row = 0; row < 3; row++) {
+                    ctx.fillRect(x + 4, base - 52 + row * 17, ancho - 8, 2);
+                }
+                ctx.strokeStyle = "#302e3938";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x + ancho * 0.35, base - 49);
+                ctx.lineTo(x + ancho * 0.35, base - 19);
+                ctx.moveTo(x + ancho * 0.78, cima + 30);
+                ctx.lineTo(x + ancho * 0.73, cima + 39);
+                ctx.lineTo(x + ancho * 0.8, cima + 47);
+                ctx.moveTo(x + 8, base - 8);
+                ctx.lineTo(x + 16, base - 13);
+                ctx.stroke();
+                ctx.fillStyle = "#e5b88535";
+                for (let chip = 0; chip < 5; chip++) {
+                    ctx.fillRect(
+                        x + 7 + (chip * 29 % (ancho - 14)),
+                        cima + 18 + (chip * 23 % Math.max(20, alto - 34)),
+                        2 + chip % 2,
+                        2
+                    );
+                }
+
+                // Una columna fracturada delante de cada tramo de muro.
+                const cx = x + ancho + 15;
+                const ch = 82 + i % 4 * 19;
+                ctx.fillStyle = "#62515a";
+                ctx.fillRect(cx, base - ch, 23, ch);
+                ctx.fillStyle = "#8b6d6c";
+                ctx.fillRect(cx - 5, base - ch, 33, 8);
+                ctx.fillRect(cx - 4, base - 12, 31, 12);
+                ctx.fillStyle = "#3e3945";
+                ctx.fillRect(cx + 5, base - ch + 10, 3, ch - 24);
+            }
+
+            // Partículas de polvo encendidas por el sol.
+            for (let i = 0; i < 28; i++) {
+                const x = (i * 173 + mundo * (0.025 + i % 3 * 0.01)) % W;
+                const y = 185 + (i * 67 % 205);
+                ctx.globalAlpha = 0.22 + (i % 4) * 0.08;
+                ctx.fillStyle = "#ffe2ad";
+                ctx.beginPath();
+                ctx.arc(x, y, 1 + i % 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            const suelo = ctx.createLinearGradient(0, SUELO, 0, H);
+            suelo.addColorStop(0, "#544347");
+            suelo.addColorStop(0.08, "#423a3e");
+            suelo.addColorStop(1, "#171b23");
+            ctx.fillStyle = suelo;
+            ctx.fillRect(0, SUELO, W, H - SUELO);
+
+            ctx.fillStyle = "#f3bb7a";
+            ctx.fillRect(0, SUELO, W, 3);
+            ctx.fillStyle = "#ffdda0";
+            ctx.fillRect(0, SUELO, W, 1);
+
+            // Lajas, grietas y polvo del camino.
+            for (let i = 0; i < 15; i++) {
+                const x = ((i * 127 - mundo * 0.72) % (W + 150) + W + 150) % (W + 150) - 60;
+                const y = SUELO + 15 + i % 4 * 24;
+                ctx.strokeStyle = i % 3 ? "#d0a47c38" : "#f5cb9252";
+                ctx.lineWidth = i % 3 ? 1 : 2;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 23 + i % 4 * 9, y + 2);
+                ctx.lineTo(x + 34 + i % 3 * 6, y + 8);
+                ctx.stroke();
+            }
+            ctx.strokeStyle = "#171b23aa";
+            ctx.lineWidth = 1;
+            for (let x = -(mundo * 0.72 % 110); x < W; x += 110) {
+                ctx.beginPath();
+                ctx.moveTo(x, SUELO + 31);
+                ctx.lineTo(x + 42, SUELO + 31);
+                ctx.stroke();
+            }
+        }
+
+        // ======================================
+        // PERSONA DE TRES PIERNAS
+        // ======================================
+
+        function dibujarJugador() {
+
+            const p = jugador;
+
+            const rebote = p.suelo
+                ? Math.sin(p.animacion * 13) * 2
+                : 0;
+
+            ctx.save();
+
+            ctx.translate(p.x, p.y + rebote);
+
+            // Sombra.
+            ctx.fillStyle = "#00000066";
+
+            ctx.beginPath();
+
+            ctx.ellipse(
+                27,
+                4,
+                39,
+                8,
+                0,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            const piel = ctx.createLinearGradient(-7, -85, 32, -40);
+            piel.addColorStop(0, "#f2c092");
+            piel.addColorStop(0.55, "#c77f58");
+            piel.addColorStop(1, "#744a3d");
+            const armadura = ctx.createLinearGradient(7, -57, 34, -22);
+            armadura.addColorStop(0, "#e8c48a");
+            armadura.addColorStop(0.45, "#8d795f");
+            armadura.addColorStop(1, "#3d4850");
+
+            // Cabeza, cuello y cabello.
+            ctx.fillStyle = piel;
+            ctx.beginPath();
+            ctx.ellipse(22, -76, 11, 14, -0.12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#302a2b";
+            ctx.beginPath();
+            ctx.moveTo(12, -79);
+            ctx.quadraticCurveTo(13, -94, 27, -91);
+            ctx.quadraticCurveTo(36, -87, 32, -75);
+            ctx.lineTo(29, -79);
+            ctx.lineTo(19, -82);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#d49a71";
+            ctx.beginPath();
+            ctx.moveTo(31, -77);
+            ctx.lineTo(36, -74);
+            ctx.lineTo(30, -72);
+            ctx.fill();
+            ctx.strokeStyle = "#754c3c";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(20, -69);
+            ctx.quadraticCurveTo(25, -65, 30, -69);
+            ctx.stroke();
+            ctx.fillStyle = "#f0bb8d";
+            ctx.fillRect(21, -63, 7, 9);
+
+            // Túnica de explorador y placas de cuero.
+            ctx.fillStyle = armadura;
+            ctx.beginPath();
+            ctx.moveTo(14, -57);
+            ctx.quadraticCurveTo(21, -62, 31, -56);
+            ctx.lineTo(34, -31);
+            ctx.quadraticCurveTo(25, -24, 12, -29);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#c18b5f";
+            ctx.beginPath();
+            ctx.moveTo(15, -53);
+            ctx.lineTo(23, -48);
+            ctx.lineTo(31, -55);
+            ctx.lineTo(28, -34);
+            ctx.lineTo(16, -35);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "#eed19d";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(23, -48);
+            ctx.lineTo(26, -34);
+            ctx.stroke();
+            ctx.fillStyle = "#dfbd80";
+            ctx.beginPath();
+            ctx.arc(23, -42, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Brazos animados.
+            const balanceo = p.suelo
+                ? Math.sin(p.animacion * 13) * 10
+                : -10;
+
+            ctx.lineCap = "round";
+            ctx.strokeStyle = "#76503f";
+            ctx.lineWidth = 9;
+            ctx.beginPath();
+            ctx.moveTo(15, -51);
+            ctx.lineTo(4, -39 + balanceo * 0.25);
+            ctx.lineTo(-2, -25 + balanceo * 0.25);
+            ctx.stroke();
+            ctx.strokeStyle = piel;
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            ctx.strokeStyle = "#76503f";
+            ctx.lineWidth = 9;
+            ctx.beginPath();
+            ctx.moveTo(30, -51);
+            ctx.lineTo(41, -38 - balanceo * 0.25);
+            ctx.lineTo(48, -46 - balanceo * 0.25);
+            ctx.stroke();
+            ctx.strokeStyle = piel;
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            ctx.fillStyle = "#e5ad7f";
+            ctx.beginPath();
+            ctx.ellipse(-3, -23 + balanceo * 0.25, 4, 3, -0.3, 0, Math.PI * 2);
+            ctx.ellipse(49, -47 - balanceo * 0.25, 4, 3, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // TRES PIERNAS.
+            const fases = [0, 2.1, 4.2];
+
+            for (let i = 0; i < 3; i++) {
+
+                const movimiento = p.suelo
+                    ? Math.sin(
+                        p.animacion * 13 + fases[i]
+                    ) * 17
+                    : (i === 1 ? -10 : 8);
+
+                const caderaX = 20 + (i - 1) * 3;
+
+                const rodillaX =
+                    caderaX + movimiento * 0.35;
+
+                const pieX =
+                    caderaX + movimiento + (i - 1) * 12;
+
+                // Tres piernas con muslo, rodilla, pantorrilla y botas.
+                ctx.strokeStyle = "#714b3d";
+                ctx.lineWidth = 10;
+                ctx.beginPath();
+                ctx.moveTo(20 + (i - 1) * 3, -29);
+                ctx.lineTo(rodillaX, -14);
+                ctx.lineTo(pieX, -3);
+                ctx.stroke();
+                ctx.strokeStyle = piel;
+                ctx.lineWidth = 7;
+                ctx.beginPath();
+                ctx.moveTo(20 + (i - 1) * 3, -29);
+                ctx.lineTo(rodillaX, -14);
+                ctx.lineTo(pieX, -3);
+                ctx.stroke();
+                ctx.fillStyle = "#8f6549";
+                ctx.beginPath();
+                ctx.ellipse(rodillaX, -14, 4, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#3c3634";
+                ctx.beginPath();
+                ctx.moveTo(pieX - 4, -5);
+                ctx.quadraticCurveTo(pieX + 1, -8, pieX + 5, -4);
+                ctx.lineTo(pieX + 15, -1);
+                ctx.quadraticCurveTo(pieX + 17, 1, pieX + 13, 2);
+                ctx.lineTo(pieX - 3, 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = "#d1a26d";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(pieX + 2, -2);
+                ctx.lineTo(pieX + 12, -1);
+                ctx.stroke();
+            }
+
+            // Ojo.
+            ctx.fillStyle = "#292426";
+
+            ctx.beginPath();
+            ctx.ellipse(29, -78, 2.5, 1.7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#fff0d3";
+            ctx.beginPath();
+            ctx.arc(29.5, -78.5, 0.7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Broche y ribete de la armadura.
+            ctx.strokeStyle = "#f2cf98";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(16, -31);
+            ctx.lineTo(31, -31);
+            ctx.stroke();
+            ctx.fillStyle = "#f5ca82";
+            ctx.beginPath();
+            ctx.arc(23, -42, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // ======================================
+        // OBSTÁCULOS: MANOS
+        // ======================================
+
+        function crearObstaculo() {
+
+            // Algunas veces aparecen dos manos juntas.
+            const dobles = Math.random() < 0.26;
+
+            obstaculos.push({
+                x: W + 35,
+                doble: dobles,
+                ancho: dobles ? 100 : 54,
+                alto: 52 + Math.random() * 15
+            });
+        }
+
+        function dibujarMano(x, alto) {
+
+            const escala = alto / 62;
+
+            ctx.save();
+
+            ctx.translate(x, SUELO);
+            ctx.scale(escala, escala);
+
+            const sombra = ctx.createLinearGradient(0, -70, 0, 0);
+            sombra.addColorStop(0, "#673c3b");
+            sombra.addColorStop(0.45, "#a85f4c");
+            sombra.addColorStop(1, "#553c39");
+            const piel = ctx.createLinearGradient(5, -65, 43, -4);
+            piel.addColorStop(0, "#f0b987");
+            piel.addColorStop(0.38, "#d78b62");
+            piel.addColorStop(0.75, "#bd704f");
+            piel.addColorStop(1, "#8b5042");
+
+            // Muñeca y palma con silueta anatómica.
+            ctx.fillStyle = sombra;
+            ctx.beginPath();
+            ctx.moveTo(11, -22);
+            ctx.lineTo(39, -22);
+            ctx.lineTo(42, 1);
+            ctx.quadraticCurveTo(25, 7, 8, 1);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = piel;
+            ctx.beginPath();
+            ctx.moveTo(8, -39);
+            ctx.quadraticCurveTo(7, -44, 13, -46);
+            ctx.lineTo(35, -45);
+            ctx.quadraticCurveTo(44, -43, 44, -35);
+            ctx.lineTo(40, -17);
+            ctx.quadraticCurveTo(27, -10, 11, -18);
+            ctx.closePath();
+            ctx.fill();
+
+            // Dedos con nudillos y uñas iluminadas.
+            const dedos = [
+                { x: 5, y: -56, h: 19, angulo: -0.08 },
+                { x: 13, y: -68, h: 30, angulo: -0.025 },
+                { x: 22, y: -73, h: 35, angulo: 0 },
+                { x: 31, y: -69, h: 31, angulo: 0.025 },
+                { x: 40, y: -59, h: 21, angulo: 0.08 }
+            ];
+            dedos.forEach(function (dedo) {
+                ctx.save();
+                ctx.translate(dedo.x + 3.5, -40);
+                ctx.rotate(dedo.angulo);
+                ctx.fillStyle = sombra;
+                ctx.beginPath();
+                ctx.roundRect(-4, -dedo.h - 1, 9, dedo.h + 7, 4);
+                ctx.fill();
+                ctx.fillStyle = piel;
+                ctx.beginPath();
+                ctx.roundRect(-3.3, -dedo.h, 7, dedo.h + 8, 3.5);
+                ctx.fill();
+                ctx.fillStyle = "#f4c99c";
+                ctx.beginPath();
+                ctx.roundRect(-2, -dedo.h + 2, 4.5, 5, 2);
+                ctx.fill();
+                ctx.strokeStyle = "#995746";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(-2, -dedo.h + 11);
+                ctx.quadraticCurveTo(0, -dedo.h + 13, 2, -dedo.h + 11);
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            // Pulgar apoyado sobre la palma.
+            ctx.fillStyle = sombra;
+            ctx.beginPath();
+            ctx.moveTo(8, -39);
+            ctx.quadraticCurveTo(-3, -43, -1, -32);
+            ctx.quadraticCurveTo(1, -23, 12, -25);
+            ctx.lineTo(15, -33);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = piel;
+            ctx.beginPath();
+            ctx.moveTo(8, -39);
+            ctx.quadraticCurveTo(0, -42, 1, -33);
+            ctx.quadraticCurveTo(3, -26, 13, -27);
+            ctx.lineTo(14, -34);
+            ctx.closePath();
+            ctx.fill();
+
+            // Pliegues y luz lateral de la palma.
+            ctx.strokeStyle = "#864d43a8";
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(14, -31);
+            ctx.quadraticCurveTo(23, -27, 34, -31);
+            ctx.moveTo(19, -22);
+            ctx.quadraticCurveTo(26, -19, 34, -23);
+            ctx.moveTo(15, -38);
+            ctx.quadraticCurveTo(21, -35, 29, -38);
+            ctx.stroke();
+            ctx.strokeStyle = "#ffd1a05c";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(11, -42);
+            ctx.quadraticCurveTo(24, -47, 37, -42);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function dibujarObstaculo(o) {
+
+            dibujarMano(o.x, o.alto);
+
+            if (o.doble) {
+                dibujarMano(o.x + 52, o.alto);
+            }
+        }
+
+        // ======================================
+        // COLISIONES
+        // ======================================
+
+        function hayColision(o) {
+
+            const px = jugador.x + 3;
+            const py = jugador.y - 84;
+
+            const pw = 43;
+            const ph = 81;
+
+            const escala = o.alto / 62;
+
+            // Área aproximada de las manos.
+            const ox = o.x + 4;
+            const oy = SUELO - 75 * escala;
+
+            const ow = (o.doble ? 98 : 46) * escala;
+            const oh = 75 * escala;
+
+            return (
+                px + pw > ox + 5 &&
+                px < ox + ow - 5 &&
+                py + ph > oy + 7 &&
+                py < SUELO - 2
+            );
+        }
+
+        // ======================================
+        // ACTUALIZACIÓN DEL JUEGO
+        // ======================================
+
+        function actualizar(dt) {
+
+            if (estado !== "jugando") return;
+
+            // Distancia recorrida.
+            mundo += velocidad * dt;
+            distancia += velocidad * dt * 0.09;
+
+            // Aceleración progresiva.
+            velocidad = Math.min(
+                920,
+                390 + distancia * 1.35
+            );
+
+            // Física del salto.
+            jugador.animacion += dt;
+
+            jugador.vy += gravedad * dt;
+            jugador.y += jugador.vy * dt;
+
+            if (jugador.y >= SUELO) {
+
+                jugador.y = SUELO;
+                jugador.vy = 0;
+                jugador.suelo = true;
+            }
+
+            // Generación continua de manos.
+            temporizador -= dt;
+
+            if (temporizador <= 0) {
+
+                crearObstaculo();
+
+                temporizador = Math.max(
+                    0.72,
+                    1.45 +
+                    Math.random() * 0.75 -
+                    (velocidad - 390) / 900
+                );
+            }
+
+            // Movimiento de obstáculos.
+            obstaculos.forEach(function (o) {
+                o.x -= velocidad * dt;
+            });
+
+            obstaculos = obstaculos.filter(function (o) {
+                return o.x > -160;
+            });
+
+            // Comprobar colisiones.
+            for (const o of obstaculos) {
+
+                if (hayColision(o)) {
+                    perder();
+                    break;
+                }
+            }
+
+            // Actualizar partículas.
+            particulas.forEach(function (p) {
+
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+
+                p.vy += 450 * dt;
+                p.vida -= dt;
+            });
+
+            particulas = particulas.filter(function (p) {
+                return p.vida > 0;
+            });
+
+            // Interfaz.
+            puntosHTML.textContent = formato(distancia);
+
+            velocidadHTML.textContent =
+                (velocidad / 390).toFixed(1) + "x";
+        }
+
+        // ======================================
+        // DIBUJAR TODO
+        // ======================================
+
+        function dibujar(dt) {
+
+            dibujarFondo(dt);
+
+            obstaculos.forEach(dibujarObstaculo);
+
+            // Partículas del salto.
+            particulas.forEach(function (p) {
+
+                ctx.globalAlpha = Math.max(0, p.vida * 2);
+
+                ctx.fillStyle = "#ffd091";
+
+                ctx.fillRect(p.x, p.y, 4, 4);
+
+                ctx.globalAlpha = 1;
+            });
+
+            dibujarJugador();
+
+            if (estado === "jugando") {
+
+                ctx.fillStyle = "#ffd091";
+                ctx.fillRect(W - 72, 83, 6, 6);
+
+                ctx.fillStyle = "#fff0d3";
+                ctx.font = "700 10px Segoe UI";
+
+                ctx.fillText("LIVE", W - 60, 89);
+            }
+        }
+
+        // ======================================
+        // BUCLE PRINCIPAL
+        // ======================================
+
+        function bucle(tiempo) {
+
+            const dt = tiempoAnterior
+                ? Math.min(
+                    (tiempo - tiempoAnterior) / 1000,
+                    0.035
+                )
+                : 0;
+
+            tiempoAnterior = tiempo;
+
+            actualizar(dt);
+            dibujar(dt);
+
+            requestAnimationFrame(bucle);
+        }
+
+        // Iniciar el renderizado.
+        dibujar(0);
+        requestAnimationFrame(bucle);
+
+    </script>
+</body>
+
+</html>
